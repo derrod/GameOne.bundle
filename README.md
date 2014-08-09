@@ -18,7 +18,7 @@ Ein Plugin für den Plex Media Server um auf die Inhalte von gameone.de über de
 - Navigation verbessern
 
 ###Changelog:
-Letzte Änderungen, es gibt noch keine Versionsnummer bis es mal raus ist ^^
+Letzte Änderungen, es gibt noch keine Versionsnummer.
 
 - Unterscheidung zwischen HD und nicht-HD Videos (ohne API Calls implementiert, daher etwas unsauber)
 - Routen für die Funktionen hinzugefügt
