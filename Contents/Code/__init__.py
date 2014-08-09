@@ -360,7 +360,7 @@ def GetMediaFromData(title, url):
 # Search just creates a new url as content variable which the ParsePosts function handles accordingly
 # This is not the best method but was easy to implement
 @route(PREFIX + '/search')
-def Search(type, query = '', title = ''):
+def Search(query = '', title = ''):
 	url = BASEURL + 'search/blog.json?q=' + query
 	title = 'Suche nach "' + query + '"'
 	return ParsePosts(title = title, content = url)
