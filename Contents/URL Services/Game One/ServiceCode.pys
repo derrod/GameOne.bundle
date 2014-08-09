@@ -1,0 +1,139 @@
+# Game One URL Service Service
+# v0.1 by Rodney <xlnedder@gmail.com>
+
+# URL for the Metadata API
+VIDEOAPIURL = "https://gameone.de/videos/%s.json"
+AUDIOAPIURL = "https://gameone.de/audios/%s.json"
+
+# URL for the API that returns us the links to the mp4 files.
+ANDROIDVIDEOURL = "https://videos.mtvnn.com/android/videos/%s.json"
+
+# Headers used by the official App.
+HTTP.Headers['User-Agent'] = 'GameOne/323 CFNetwork/609 Darwin/13.0.0'
+HTTP.Headers['X-G1APP-DEVICEINFO'] = 'iPhone3,1_6.0'
+HTTP.Headers['X-G1APP-VERSION'] = '2.0.1(323)'
+HTTP.Headers['X-G1APP-APPIDENTIFIER'] = 'de.gameone.iphone'
+HTTP.Headers['X-G1APP-IDENTIFIER'] = '824BAB323627483698C844E2CC978D06'
+
+def MetadataObjectForURL(url):
+
+	id = url.split('/')[-1]
+
+	#Determine whether the url is for audio or video content, then handle it accordingly.
+	if len(id) > 4:
+		video_meta = JSON.ObjectFromURL(VIDEOAPIURL % id, acheTime=CACHE_1HOUR, timeout = 20.0)['video_meta']
+		duration = int(video_meta['duration']) * 1000
+		return VideoClipObject(
+			title = video_meta['title'],
+			summary = video_meta['description'],
+			thumb = Resource.ContentsOfURLWithFallback(video_meta['img_url']),
+			duration = duration,
+		)
+	else:
+		audio_meta = JSON.ObjectFromURL(AUDIOAPIURL % id, cacheTime=CACHE_1HOUR)['audio_meta']
+		return TrackObject(
+			title = audio_meta['title'],
+			summary = audio_meta['description'],
+		)
+
+def MediaObjectsForURL(url):
+	ret = []
+	
+	id = url.split('/')[-1]
+	host = url.split('/')[-2]
+
+	#Determine whether the url is for audio or video content, then handle it accordingly.
+	# This probably can be optimized by using a for loop with a list of qualities at the top...
+	# ... meh, maybe later.
+	if len(id) > 4:
+		if host == 'sd.media.gameone.de':
+			ret.append(MediaObject(
+				video_codec = VideoCodec.H264,
+				audio_codec = AudioCodec.AAC,
+				video_resolution = '360',
+				audio_channels = 2,
+				container = 'mp4',
+				parts = [PartObject(key=Callback(PlayMedia, url = url, fmt='high', type='video'))],
+				optimized_for_streaming = 'true',
+			))
+			ret.append(MediaObject(
+				video_codec = VideoCodec.H264,
+				audio_codec = AudioCodec.AAC,
+				video_resolution = '234',
+				audio_channels = 2,
+				container = 'mp4',
+				parts = [PartObject(key=Callback(PlayMedia, url = url, fmt='med', type='video'))],
+				optimized_for_streaming = 'true',
+			))
+			ret.append(MediaObject(
+				video_codec = VideoCodec.H264,
+				audio_codec = AudioCodec.AAC,
+				video_resolution = '234',
+				audio_channels = 2,
+				container = 'mp4',
+				parts = [PartObject(key=Callback(PlayMedia, url = url, fmt='low', type='video'))],
+				optimized_for_streaming = 'true',
+			))
+		else:
+			ret.append(MediaObject(
+				video_codec = VideoCodec.H264,
+				audio_codec = AudioCodec.AAC,
+				video_resolution = '720',
+				audio_channels = 2,
+				container = 'mp4',
+				parts = [PartObject(key=Callback(PlayMedia, url = url, fmt='high', type='video'))],
+				optimized_for_streaming = 'true',
+			))
+			ret.append(MediaObject(
+				video_codec = VideoCodec.H264,
+				audio_codec = AudioCodec.AAC,
+				video_resolution = '360',
+				audio_channels = 2,
+				container = 'mp4',
+				parts = [PartObject(key=Callback(PlayMedia, url = url, fmt='med', type='video'))],
+				optimized_for_streaming = 'true',
+			))
+			ret.append(MediaObject(
+				video_codec = VideoCodec.H264,
+				audio_codec = AudioCodec.AAC,
+				video_resolution = '270',
+				audio_channels = 2,
+				container = 'mp4',
+				parts = [PartObject(key=Callback(PlayMedia, url = url, fmt='low', type='video'))],
+				optimized_for_streaming = 'true',
+			))
+	else:
+		ret.append(MediaObject(
+			audio_codec = AudioCodec.MP3,
+			audio_channels = 2,
+			container = 'mp3',
+			parts = [PartObject(key=Callback(PlayMedia, url = url, fmt='std', type='audio'))],
+			optimized_for_streaming = 'false',
+		))
+	
+	return ret
+
+@indirect
+def PlayMedia(url, fmt, type):
+	# This function get's the audio metadata and uses the iphone_url key to get the url of the .mp3 and returns it
+	# Or it uses the android API for Video to get the url for the desired quality
+	# We can safely cache this for... years? The URL's don't change.
+	id = url.split('/')[-1]
+	
+	if type == 'audio':
+		audio_meta = JSON.ObjectFromURL(AUDIOAPIURL % id, cacheTime=3600.0)['audio_meta']
+		return IndirectResponse(TrackObject, key=audio_meta['iphone_url'])
+	else:
+		video_urls = JSON.ObjectFromURL(ANDROIDVIDEOURL % id, cacheTime=3600.0)
+		if fmt == 'high':
+			video_url = video_urls['high']
+		elif fmt == 'med':
+			video_url = video_urls['medium']
+		elif fmt == 'low':
+			video_url = video_urls['low']
+		
+		return IndirectResponse(VideoClipObject, key=video_url)
+
+def NormalizeURL(url):
+	# URLs already have a friendly format, no need to normalize them
+	return url

@@ -1,0 +1,21 @@
+[
+	{
+		"id": "username",
+		"type": "text",
+		"label": "Username",
+		"default": ""
+	},
+	{
+		"id": "password",
+		"type": "text",
+		"label": "Passwort",
+		"default": "",
+		"option": "hidden"
+	},
+	{
+		"id": "reverse_order",
+		"label": "Kehre Sortierung von Videos in Blogposts um",
+		"type": "bool",
+		"default": "false",
+   }
+]	
