@@ -1,4 +1,4 @@
-# GameOne.de Plex Plugin
+﻿# GameOne.de Plex Plugin
 # by Rodney <https://github.com/derrod>
 
 PREFIX = "/video/gameone"
@@ -165,7 +165,7 @@ def Account():
 		name = account_info['name']
 		if Dict['premium'] == True:
 			subscription_end = str(Datetime.ParseDate(account_info['subscription_end_date'])).split('+')[0].replace('-','.')
-			text = 'Name: ' + name + '\1UP aktiv bis: ' + subscription_end + '\n'
+			text = 'Name: ' + name + '\n1UP aktiv bis: ' + subscription_end + '\n'
 		else:
 			text = 'Name: ' + name + '\nKein 1UP Abonnement\n'
 	
