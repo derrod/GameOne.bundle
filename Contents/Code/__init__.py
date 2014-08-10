@@ -6,7 +6,7 @@ PREFIX = "/video/gameone"
 NAME = 'Game One'
 
 # Icons
-ART	= 'art-default.jpg'
+ART = 'art-default.jpg'
 ICON = 'icon-default.png'
 IC_BLOG = 'icon_blog.png'
 IC_PUP = 'icon_1up.png'
@@ -24,11 +24,11 @@ AUDIOAPIURL = "https://gameone.de/audios/%s.json"
 # This is a nonexistant url for handling video and audio files because there isn't an universal URL otherwise
 MEDIAURL = "http://media.gameone.de/%s"
 
-# All videos below a certain ID/Before a certain Dater are max. 360p,
+# All videos below a certain ID/Before a certain Date are max. 360p,
 # this URL will be used to tell the URL Service that the video is only 360p
 SDMEDIAURL = "http://sd.media.gameone.de/%s"
 
-# Headers of the official App
+# Headers of the official App, not all are necessary but I kept it close to the original
 HTTP.Headers['User-Agent'] = 'GameOne/323 CFNetwork/609 Darwin/13.0.0'
 HTTP.Headers['X-G1APP-DEVICEINFO'] = 'iPhone3,1_6.0'
 HTTP.Headers['X-G1APP-VERSION'] = '2.0.1(323)'
@@ -38,9 +38,8 @@ HTTP.Headers['X-G1APP-IDENTIFIER'] = '824BAB323627483698C844E2CC978D06'
 # Base URL of the website, we use https for all requests
 BASEURL = 'https://gameone.de/'
 
-# This can be set to 31 for a 6x5 grid layout + Next button on the same page
-# However a lot of items make everything slower (especially image loading is slow and fails more often than not)
-# For VideoItems paging seems to cause issues anyway...
+# 8 Items is what the App uses, you can increase this but it might cause issues
+# with loading times, also VideoObject view is buggy in Plex Home Theater
 ITEMS_PER_PAGE = 8
 TV_ITEMS_PER_PAGE = 8
 
@@ -54,18 +53,14 @@ REGEX_YOUTUBE = Regex(r'youtube://(.*)"')
 def Start():
 	Plugin.AddPrefixHandler(PREFIX, MainMenu, NAME, ICON, ART)
 
-	Plugin.AddViewGroup("InfoList", viewMode="InfoList", mediaType="items")
-	Plugin.AddViewGroup("List", viewMode="List", mediaType="items")
-
 	ObjectContainer.title1 = 'Game One'
 	DirectoryItem.thumb = R(ICON)
 	VideoItem.thumb = R(ICON)
-	
-	# Caching causes issues, but it's useful, I'm still not completely sure whether to turn it off or
-	# just use some low amount of time.
-	# Ten Minutes seesm reasonable
-	HTTP.CacheTime = 600.0
-	# Even if we're using Cache, between sessions we want to clear it beacuse It seems to be causing issues.
+
+	# One hour seems reasonable for images and feeds that are updated 1-2 times a day
+	# You can turn it off if you experience problems with image loading
+	HTTP.CacheTime = 3600.0
+	# Cache should be cleared between seesion because not doing so seems to cause Issues
 	HTTP.ClearCache()
 
 	Initialize()
@@ -77,8 +72,6 @@ def ValidatePrefs():
 
 def Initialize():
 	# Clunky login funtion
-	# It needs to be rewritten, actually ResetDict() could be used for parts of it
-	# However, it works.
 	u = Prefs['username']
 	p = Prefs['password']
 	if( u and p ):
@@ -122,9 +115,7 @@ def Initialize():
 	
 		
 def MainMenu():
-	# Because I found no other way of providing feedback if the login worked I do this
-	# According to the Docs ValidatePrefs can return a message container, but that doesn work.
-	# If it would Work I wouldn't do this
+	# Text as title of the account item to provide feedback on login status
 	if Dict['logged_in'] == True:
 		if Dict['premium'] == True:
 			status_text = 'Eingeloggt - 1UP Aktiv'
@@ -155,8 +146,7 @@ def MainMenu():
 
 @route(PREFIX + '/account')
 def Account():
-	# Just returns a checkbox that says your name and if your subscription is still valid
-	# Might do more (e.g. PlayTube Videos from that user) in the future
+	# Just returns a checkbox that returns your name and if your subscription is still valid
 	if Dict['logged_in'] == False:
 		text = 'Du bist nicht eingeloggt.'
 	else:
@@ -206,7 +196,7 @@ def ParsePosts(title, content, page = 1):
 		# URLs are currently all blogposts as this fucntion does not parse PlayTube ot TV Shows so we can safely use this.
 		posturl =  BASEURL + '/blog/' + str(post['id']) +'.json'
 
-		# Same as above, simple message if you don't have the permission to access content.
+		# Same as in the main menu, just return a message if you aren't allowed to access that content.
 		if post['subscription_only'] == True and Dict['premium'] == False:
 			cb = Callback(Unauthorized)
 		else:
@@ -270,7 +260,6 @@ def ParseTVShows(title, page = 1, query = ''):
 			show_url = MEDIAURL % show['video_url'].split('/')[-1].replace('.m3u8','')
 			
 		# This can be probably changed, but I didn't try out if VideoClipObjects can be used to show a message box yet.
-		# Treat this as outdated code that I didn't update before making this commit beacuse it's late and I'm tired
 		if show['subscription_only'] == True and Dict['premium'] == False:
 			oc.add(DirectoryObject(
 				key = Callback(Unauthorized),
@@ -358,7 +347,6 @@ def GetMediaFromData(title, url):
 		return oc
 
 # Search just creates a new url as content variable which the ParsePosts function handles accordingly
-# This is not the best method but was easy to implement
 @route(PREFIX + '/search')
 def Search(query = '', title = ''):
 	url = BASEURL + 'search/blog.json?q=' + query
