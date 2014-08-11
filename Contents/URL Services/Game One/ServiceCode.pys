@@ -1,12 +1,9 @@
 ﻿# Game One URL Service
 # v0.1 by Rodney <xlnedder@gmail.com>
 
-# URL for the Metadata API
+# Audio/Video Metadata API endpoints
 VIDEOAPIURL = "https://gameone.de/videos/%s.json"
 AUDIOAPIURL = "https://gameone.de/audios/%s.json"
-
-# URL for the API that returns us the links to the mp4 files.
-ANDROIDVIDEOURL = "https://videos.mtvnn.com/android/videos/%s.json"
 
 # Headers used by the official App.
 HTTP.Headers['User-Agent'] = 'GameOne/323 CFNetwork/609 Darwin/13.0.0'
@@ -21,7 +18,7 @@ def MetadataObjectForURL(url):
 
 	#Determine whether the url is for audio or video content, then handle it accordingly.
 	if len(id) > 4:
-		video_meta = JSON.ObjectFromURL(VIDEOAPIURL % id, acheTime=CACHE_1HOUR, timeout = 20.0)['video_meta']
+		video_meta = JSON.ObjectFromURL(VIDEOAPIURL % id, cacheTime=3600.0, timeout = 20.0)['video_meta']
 		duration = int(video_meta['duration']) * 1000
 		return VideoClipObject(
 			title = video_meta['title'],
@@ -30,7 +27,7 @@ def MetadataObjectForURL(url):
 			duration = duration,
 		)
 	else:
-		audio_meta = JSON.ObjectFromURL(AUDIOAPIURL % id, cacheTime=CACHE_1HOUR)['audio_meta']
+		audio_meta = JSON.ObjectFromURL(AUDIOAPIURL % id, cacheTime=3600.0)['audio_meta']
 		return TrackObject(
 			title = audio_meta['title'],
 			summary = audio_meta['description'],
@@ -38,68 +35,22 @@ def MetadataObjectForURL(url):
 
 def MediaObjectsForURL(url):
 	ret = []
-	
 	id = url.split('/')[-1]
-	host = url.split('/')[-2]
-
+	
 	#Determine whether the url is for audio or video content, then handle it accordingly.
-	# This probably can be optimized by using a for loop with a list of qualities at the top...
-	# ... meh, maybe later.
 	if len(id) > 4:
-		if host == 'sd.media.gameone.de':
+		qualities = XML.ObjectFromURL('http://riptide.mtvnn.com/mediagen/' + id, cacheTime=3600.0, timeout = 120.0)
+		for item in qualities.video.item.rendition[::-1]:
+			height = int(item.attrib['height'])
+			url = item.src.text
+			
 			ret.append(MediaObject(
 				video_codec = VideoCodec.H264,
 				audio_codec = AudioCodec.AAC,
-				video_resolution = '360',
+				video_resolution = height,
 				audio_channels = 2,
 				container = 'mp4',
-				parts = [PartObject(key=Callback(PlayMedia, url = url, fmt='high', type='video'))],
-				optimized_for_streaming = 'true',
-			))
-			ret.append(MediaObject(
-				video_codec = VideoCodec.H264,
-				audio_codec = AudioCodec.AAC,
-				video_resolution = '234',
-				audio_channels = 2,
-				container = 'mp4',
-				parts = [PartObject(key=Callback(PlayMedia, url = url, fmt='med', type='video'))],
-				optimized_for_streaming = 'true',
-			))
-			ret.append(MediaObject(
-				video_codec = VideoCodec.H264,
-				audio_codec = AudioCodec.AAC,
-				video_resolution = '234',
-				audio_channels = 2,
-				container = 'mp4',
-				parts = [PartObject(key=Callback(PlayMedia, url = url, fmt='low', type='video'))],
-				optimized_for_streaming = 'true',
-			))
-		else:
-			ret.append(MediaObject(
-				video_codec = VideoCodec.H264,
-				audio_codec = AudioCodec.AAC,
-				video_resolution = '720',
-				audio_channels = 2,
-				container = 'mp4',
-				parts = [PartObject(key=Callback(PlayMedia, url = url, fmt='high', type='video'))],
-				optimized_for_streaming = 'true',
-			))
-			ret.append(MediaObject(
-				video_codec = VideoCodec.H264,
-				audio_codec = AudioCodec.AAC,
-				video_resolution = '360',
-				audio_channels = 2,
-				container = 'mp4',
-				parts = [PartObject(key=Callback(PlayMedia, url = url, fmt='med', type='video'))],
-				optimized_for_streaming = 'true',
-			))
-			ret.append(MediaObject(
-				video_codec = VideoCodec.H264,
-				audio_codec = AudioCodec.AAC,
-				video_resolution = '270',
-				audio_channels = 2,
-				container = 'mp4',
-				parts = [PartObject(key=Callback(PlayMedia, url = url, fmt='low', type='video'))],
+				parts = [PartObject(key=Callback(PlayMedia, id = url, fmt = str(height)), streams = [AudioStreamObject(language_code = Locale.Language.German)])],
 				optimized_for_streaming = 'true',
 			))
 	else:
@@ -107,30 +58,20 @@ def MediaObjectsForURL(url):
 			audio_codec = AudioCodec.MP3,
 			audio_channels = 2,
 			container = 'mp3',
-			parts = [PartObject(key=Callback(PlayMedia, url = url, fmt='std', type='audio'))],
+			parts = [PartObject(key=Callback(PlayMedia, id = id, fmt='audio'))],
 			optimized_for_streaming = 'false',
 		))
 	
 	return ret
 
 @indirect
-def PlayMedia(url, fmt, type):
-	# This function get's the audio metadata and uses the iphone_url key to get the url of the .mp3 and returns it
-	# Or it uses the android API for Video to get the url for the desired quality
-	# We can safely cache this for... years? The URL's don't change.
-	id = url.split('/')[-1]
-	
-	if type == 'audio':
+def PlayMedia(id, fmt):
+	if fmt == 'audio':
 		audio_meta = JSON.ObjectFromURL(AUDIOAPIURL % id, cacheTime=3600.0)['audio_meta']
 		return IndirectResponse(TrackObject, key=audio_meta['iphone_url'])
 	else:
-		video_urls = JSON.ObjectFromURL(ANDROIDVIDEOURL % id, cacheTime=3600.0)
-		if fmt == 'high':
-			video_url = video_urls['high']
-		elif fmt == 'med':
-			video_url = video_urls['medium']
-		elif fmt == 'low':
-			video_url = video_urls['low']
+		# We can't really do anything here, so we do next to nothing.
+		video_url = 'http://cdn.riptide-mtvn.com/r2/' + id.split('/r2/')[-1] 
 		
 		return IndirectResponse(VideoClipObject, key=video_url)
 

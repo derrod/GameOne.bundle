@@ -24,10 +24,6 @@ AUDIOAPIURL = "https://gameone.de/audios/%s.json"
 # This is a nonexistant url for handling video and audio files because there isn't an universal URL otherwise
 MEDIAURL = "http://media.gameone.de/%s"
 
-# All videos below a certain ID/Before a certain Date are max. 360p,
-# this URL will be used to tell the URL Service that the video is only 360p
-SDMEDIAURL = "http://sd.media.gameone.de/%s"
-
 # Headers of the official App, not all are necessary but I kept it close to the original
 HTTP.Headers['User-Agent'] = 'GameOne/323 CFNetwork/609 Darwin/13.0.0'
 HTTP.Headers['X-G1APP-DEVICEINFO'] = 'iPhone3,1_6.0'
@@ -146,7 +142,7 @@ def MainMenu():
 
 @route(PREFIX + '/account')
 def Account():
-	# Just returns a checkbox that returns your name and if your subscription is still valid
+	# Just returns a messagebox that returns your name and if your subscription is still valid
 	if Dict['logged_in'] == False:
 		text = 'Du bist nicht eingeloggt.'
 	else:
@@ -200,7 +196,7 @@ def ParsePosts(title, content, page = 1):
 		if post['subscription_only'] == True and Dict['premium'] == False:
 			cb = Callback(Unauthorized)
 		else:
-			cb = Callback(GetMediaFromData, title = post_title, url = posturl)
+			cb = Callback(GetMediaFromURL, title = post_title, url = posturl)
 		
 		oc.add(DirectoryObject(
 			key = cb,
@@ -231,7 +227,7 @@ def ParseTVShows(title, page = 1, query = ''):
 	# If routes are used page is not an int anymore
 	page = int(page)
 
-	if len(query) > 3:
+	if len(query) > 1:
 		content_url = BASEURL + '/search/shows.json?q=' + query + '&page=' + str(page) + '&per_page=' + str(TV_ITEMS_PER_PAGE)
 		title = 'Suche nach "' + query + '" in TV Shows'
 	else:
@@ -250,14 +246,9 @@ def ParseTVShows(title, page = 1, query = ''):
 			show_content = show['short_description'] + '\n\n' + HTML.ElementFromString(show['long_description']).text_content()
 		else:
 			show_content = HTML.ElementFromString(show['long_description']).text_content()
-		
+
 		show_title = show['title']
-		
-		# For tv episodes we can determine if it's HD by using the episode number.
-		if show['episode'] < 250:
-			show_url = SDMEDIAURL % show['video_url'].split('/')[-1].replace('.m3u8','')
-		else:
-			show_url = MEDIAURL % show['video_url'].split('/')[-1].replace('.m3u8','')
+		show_url = MEDIAURL % show['video_url'].split('/')[-1].replace('.m3u8','')
 			
 		# This can be probably changed, but I didn't try out if VideoClipObjects can be used to show a message box yet.
 		if show['subscription_only'] == True and Dict['premium'] == False:
@@ -294,7 +285,8 @@ def ParseTVShows(title, page = 1, query = ''):
 		return oc
 
 @route(PREFIX + '/mediafromurl')
-def GetMediaFromData(title, url):
+def GetMediaFromURL(title, url):
+	title = unicode(title, "utf-8")
 	oc = ObjectContainer(title2=title, replace_parent=False, no_cache = True)
 	
 	data = JSON.ObjectFromURL(url, cacheTime=0)['post']['body']
@@ -318,12 +310,7 @@ def GetMediaFromData(title, url):
 			videos.reverse()
 		for video in videos:
 			video_meta = JSON.ObjectFromURL(VIDEOAPIURL % video, cacheTime=CACHE_1HOUR, timeout = 120.0)['video_meta']
-			# Here we split HD and non-HD Videos, luckily the id is just a increaing number so we actually can use it to determine whether a Video is HD or not!
-			if video_meta['id'] > 636600:
-				video_url = MEDIAURL % video_meta['riptide_video_id']
-			else:
-				video_url = SDMEDIAURL % video_meta['riptide_video_id']
-
+			video_url = MEDIAURL % video_meta['riptide_video_id']
 			oc.add(VideoClipObject(
 				url = video_url,
 				title = video_meta['title'],
