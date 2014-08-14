@@ -13,5 +13,5 @@ A plugin to access content from gameone.de using their mobile API.
 - Find & Fix bugs
 - Test other devices (Roku, RasPlex, Samsung Smart TV, etc.)
 - Improve navigation
--> Look at GitHub Issues
+- Look at GitHub Issues
 

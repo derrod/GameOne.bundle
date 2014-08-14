@@ -15,7 +15,7 @@
 			<key>Identifier</key>
 			<string>com.plexapp.plugins.gameonemedia</string>
             <key>URLPattern</key>
-                  <string>http://(sd\.)?media\.gameone\.de/+</string>
+                  <string>http://media\.gameone\.de/+</string>
             <key>TestURLs</key>
             <array>
                 <string>http://media.gameone.de/726</string>
