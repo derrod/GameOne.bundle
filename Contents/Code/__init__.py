@@ -305,7 +305,7 @@ def Parser(content, page = 1, query = ''):
 		elif type == 'video_meta':
 			video_meta = item['video_meta']
 			# Gametrailers.com Videos are included in results, these do not caontain a valid video id, so we make sure only those with one are listed
-			if len(video_meta['riptide_video_id']) == 32:
+			if len(str(video_meta['riptide_video_id'])) == 32:
 				video_url = MEDIAURL % video_meta['riptide_video_id']
 				oc.add(VideoClipObject(
 					url = video_url,
