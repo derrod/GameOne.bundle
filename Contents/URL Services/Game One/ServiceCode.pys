@@ -35,7 +35,7 @@ def MetadataObjectForURL(url):
 			thumb = Resource.ContentsOfURLWithFallback(video_meta['img_url']),
 			duration = duration,
 		)
-	elif len(id < 5):
+	elif len(id) < 5:
 		audio_meta = JSON.ObjectFromURL(AUDIOAPIURL % id, cacheTime=3600.0)['audio_meta']
 		return TrackObject(
 			title = audio_meta['title'],
@@ -43,17 +43,18 @@ def MetadataObjectForURL(url):
 		)
 
 
+@deferred
 def MediaObjectsForURL(url):
+	ret = []
 	id = url.split('/')[-1]
 	if "gallery" in id:
 		id = id.split(':')[-1]
-		return MediaObject(
+		ret.append(MediaObject(
 			parts = Callback(ViewMedia, id = id, fmt = 'image')
-		)
+		))
 	elif len(id) > 5:
 		# This requests can take some time if made rapidly, on slower connections even more. The high timeout is mesaure to avoid errors.
 		qualities = XML.ObjectFromURL('http://riptide.mtvnn.com/mediagen/' + id, cacheTime=3600.0, timeout = 240.0)
-		ret = []
 		for item in qualities.video.item.rendition[::-1]:
 			height = int(item.attrib['height'])
 			url = item.src.text
@@ -63,18 +64,19 @@ def MediaObjectsForURL(url):
 				video_resolution = height,
 				audio_channels = 2,
 				container = 'mp4',
-				parts = [PartObject(key=Callback(ViewMedia, id = url, fmt = 'video'), streams = [AudioStreamObject(language_code = Locale.Language.German)])],
+				parts = [PartObject(key=Callback(ViewMedia, id = url, fmt = 'video'))],
 				optimized_for_streaming = 'true',
 			))
-			return ret
+			
 	elif len(id) < 5:
-		return MediaObject(
+		ret.append(MediaObject(
 			audio_codec = AudioCodec.MP3,
 			audio_channels = 2,
 			container = 'mp3',
 			parts = [PartObject(key=Callback(ViewMedia, id = id, fmt='audio'))],
-			optimized_for_streaming = 'false',
-		)
+			optimized_for_streaming = 'false'
+		))
+	return ret
 
 
 @indirect
