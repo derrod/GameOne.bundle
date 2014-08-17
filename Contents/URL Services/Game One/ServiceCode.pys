@@ -64,7 +64,7 @@ def MediaObjectsForURL(url):
 				video_resolution = height,
 				audio_channels = 2,
 				container = 'mp4',
-				parts = [PartObject(key=Callback(ViewMedia, id = url, fmt = 'video'))],
+				parts = [PartObject(key=Callback(ViewMedia, id = url, fmt = 'video'), streams = [AudioStreamObject(language_code = Locale.Language.German)])],
 				optimized_for_streaming = 'true',
 			))
 			
@@ -73,7 +73,7 @@ def MediaObjectsForURL(url):
 			audio_codec = AudioCodec.MP3,
 			audio_channels = 2,
 			container = 'mp3',
-			parts = [PartObject(key=Callback(ViewMedia, id = id, fmt='audio'))],
+			parts = [PartObject(key=Callback(ViewMedia, id = id, fmt='audio'), streams = [AudioStreamObject(language_code = Locale.Language.German)])],
 			optimized_for_streaming = 'false'
 		))
 	return ret
