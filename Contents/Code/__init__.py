@@ -35,12 +35,6 @@ HTTP.Headers['X-G1APP-IDENTIFIER'] = '824BAB323627483698C844E2CC978D06'
 
 BASEURL = 'https://gameone.de/'
 
-#ITEMS_PER_PAGE = 31
-#TV_ITEMS_PER_PAGE = 31
-# Seems to slow :( Using App Values now:
-ITEMS_PER_PAGE = 8
-TV_ITEMS_PER_PAGE = 8
-
 # REGEX Patterns:
 REGEX_AUDIO = Regex(r'rtaudio:(.*)"')
 REGEX_VIDEO = Regex(r'riptide:(.*)"')
@@ -73,6 +67,11 @@ def ValidatePrefs():
 
 
 def Initialize():
+	global ITEMS_PER_PAGE
+	ITEMS_PER_PAGE = int(Prefs['itemsperpage'])
+	global TV_ITEMS_PER_PAGE
+	TV_ITEMS_PER_PAGE = int(Prefs['itemsperpage'])
+
 	# Login if possible
 	u = Prefs['username']
 	p = Prefs['password']

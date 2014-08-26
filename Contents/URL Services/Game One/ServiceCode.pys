@@ -67,13 +67,12 @@ def MediaObjectsForURL(url):
 				parts = [PartObject(key=Callback(ViewMedia, id = url, fmt = 'video'), streams = [AudioStreamObject(language_code = Locale.Language.German)])],
 				optimized_for_streaming = 'true',
 			))
-			
 	elif len(id) < 5:
 		ret.append(MediaObject(
 			audio_codec = AudioCodec.MP3,
+			container = Container.MP3,
 			audio_channels = 2,
-			container = 'mp3',
-			parts = [PartObject(key=Callback(ViewMedia, id = id, fmt='audio'), streams = [AudioStreamObject(language_code = Locale.Language.German)])],
+			parts = [PartObject(key=Callback(ViewMedia, id = id, fmt='audio'), streams = [AudioStreamObject(codec=AudioCodec.MP3, channels=2)])],
 			optimized_for_streaming = 'false'
 		))
 	return ret
@@ -100,7 +99,6 @@ def ViewMedia(id, fmt):
 		return IndirectResponse(TrackObject, key=audio_meta['iphone_url'])
 	elif fmt == 'video':
 		video_url = 'http://cdn.riptide-mtvn.com/r2/' + id.split('/r2/')[-1] 
-		
 		return IndirectResponse(VideoClipObject, key=video_url)
 
 

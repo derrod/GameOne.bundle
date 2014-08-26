@@ -10,12 +10,19 @@
 		"type": "text",
 		"label": "Passwort",
 		"default": "",
-		"option": "hidden"
+		"option": "hidden"	
 	},
 	{
 		"id": "reverse_order",
 		"label": "Kehre Sortierung von Videos in Blogposts um",
 		"type": "bool",
-		"default": "false",
-   }
-]	
+		"default": "true",
+	},
+	{
+		"id": "itemsperpage",
+		"label": "Posts pro Seite (mehr als 8 kann langsam sein)",
+		"type": "enum",
+		"values": ["8", "16", "32"],
+		"default": "8",
+	},
+]
