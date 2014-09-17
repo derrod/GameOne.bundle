@@ -62,7 +62,7 @@ def MediaObjectsForURL(url):
 		for key in sorted(resolutions)[::-1]:
 			height = int(key)
 			url = resolutions[key]
-			Log.Debug('Item: height: ' + str(height) + ', url: ' + str(url))
+
 			ret.append(MediaObject(
 				video_codec = VideoCodec.H264,
 				audio_codec = AudioCodec.AAC,
