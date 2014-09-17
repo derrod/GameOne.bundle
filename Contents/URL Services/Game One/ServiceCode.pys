@@ -55,9 +55,14 @@ def MediaObjectsForURL(url):
 	elif len(id) > 5:
 		# This requests can take some time if made rapidly, on slower connections even more. The high timeout is mesaure to avoid errors.
 		qualities = XML.ObjectFromURL('http://riptide.mtvnn.com/mediagen/' + id, cacheTime=3600.0, timeout = 240.0)
-		for item in qualities.video.item.rendition[::-1]:
-			height = int(item.attrib['height'])
-			url = item.src.text
+		resolutions = dict()
+		for item in qualities.video.item.rendition:
+			resolutions[item.attrib['height']] = item.src.text
+
+		for key in sorted(resolutions)[::-1]:
+			height = int(key)
+			url = resolutions[key]
+			Log.Debug('Item: height: ' + str(height) + ', url: ' + str(url))
 			ret.append(MediaObject(
 				video_codec = VideoCodec.H264,
 				audio_codec = AudioCodec.AAC,
@@ -67,6 +72,7 @@ def MediaObjectsForURL(url):
 				parts = [PartObject(key=Callback(ViewMedia, id = url, fmt = 'video'), streams = [AudioStreamObject(language_code = Locale.Language.German)])],
 				optimized_for_streaming = 'true',
 			))
+
 	elif len(id) < 5:
 		ret.append(MediaObject(
 			audio_codec = AudioCodec.MP3,
