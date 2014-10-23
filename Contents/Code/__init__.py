@@ -280,7 +280,6 @@ def Parser(content, page = 1, query = ''):
 			else:
 				show_content = HTML.ElementFromString(show['long_description']).text_content()
 			show_title = show['title']
-			show_url = MEDIAURL % show['video_url'].split('/')[-1].replace('.m3u8','')
 
 			if show['subscription_only'] == True and Dict['premium'] == False:
 				oc.add(DirectoryObject(
@@ -291,6 +290,7 @@ def Parser(content, page = 1, query = ''):
 					tagline = show['short_description']
 				))
 			else:
+				show_url = MEDIAURL % show['video_url'].split('/')[-1].replace('.m3u8','')
 				oc.add(VideoClipObject(
 					url = show_url,
 					title = show_title,
